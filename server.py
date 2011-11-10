@@ -41,6 +41,10 @@ class IMProtocol(basic.LineReceiver):
 		if command == "quit":
 			self.disconnect("Closing connection")
 		elif command == "user":
+			if len(args) < 1:
+				self.send("No username provided")
+				return 0
+			
 			self.authorize(args[0])
 		elif command == "im":
 			if not self.authorized:
