@@ -43,6 +43,9 @@ class IMProtocol(basic.LineReceiver):
 		elif command == "user":
 			self.authorize(args[0])
 		elif command == "im":
+			if not self.authorized:
+				return 0
+			
 			if len(args) < 1:
 				self.send("No receiver specified")
 				return 0
@@ -55,8 +58,10 @@ class IMProtocol(basic.LineReceiver):
 				else:
 					self.send("Receiver doesn't exist")
 		else:
-			if self.authorized:
-				for client in self.factory.clients:
+			if not self.authorized:
+				return 0
+			
+			for client in self.factory.clients:
 					self.factory.clients[client].send(self.name + ": " + line);
 	
 	def send(self, message):
