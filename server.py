@@ -6,6 +6,7 @@ class IMProtocol(basic.LineReceiver):
 		if name in self.factory.clients:
 			self.send("User already logged in")
 		else:
+			self.deauthorize()
 			self.name = name
 			self.factory.clients[name] = self
 			self.send("Successfully logged in")
@@ -18,15 +19,17 @@ class IMProtocol(basic.LineReceiver):
 		if self.factory.numClients > 50:
 			self.disconnect("Too many connections")
 		else:
-			self.send("Connection accepted")
+			self.send("Connection accepted, type HELP for information on usage")
 	
 	def connectionLost(self, reason):
 		self.factory.numClients -= 1
 	
-	def disconnect(self, reason):
+	def deauthorize(self):
 		if self.authorized:
 			self.factory.clients.pop(self.name)
-		
+	
+	def disconnect(self, reason):
+		self.deauthorize()
 		self.send(reason)
 		self.transport.loseConnection()
 	
@@ -34,9 +37,11 @@ class IMProtocol(basic.LineReceiver):
 		if len(line) < 1:
 			return 0
 		
-		line = line.lower()
-		command = line.split()[0]
+		line = line.strip()
+		command = line.split()[0].lower()
 		args = line.split()[1:]
+		
+		print command
 		
 		if command == "quit":
 			self.disconnect("Closing connection")
@@ -46,6 +51,13 @@ class IMProtocol(basic.LineReceiver):
 				return 0
 			
 			self.authorize(args[0])
+		elif command == "help":
+			self.send("No help files available")
+		elif command == "users":
+			self.send("Active users:")
+			
+			for user in self.factory.clients:
+				self.send(user)
 		elif command == "im":
 			if not self.authorized:
 				return 0
@@ -78,5 +90,5 @@ class IMFactory(protocol.Factory):
 		self.numClients = 0
 		self.clients = dict()
 
-reactor.listenTCP(1234, IMFactory())
+reactor.listenTCP(7000, IMFactory())
 reactor.run()
